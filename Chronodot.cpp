@@ -11,8 +11,7 @@
 #define REGISTER_CONTROL	14
 #define REGISTER_STATUS		15
 #define REGISTER_AGING		16
-#define REGISTER_TEMP_WHOLE	17
-#define REGISTER_TEMP_FRAC	18
+#define REGISTER_TEMP		17
 
 #define FROM_BCD_DIGIT(a)	a
 #define FROM_BCD_DIGITS(a)	((((a) >> 4) * 10) + (a))
@@ -33,6 +32,265 @@
 #define ALARM_BIT_THREE			0x04
 #define ALARM_BIT_FOUR			0x08
 #define ALARM_DAY_DATE			0x10
+
+/////////////////////////
+// Our Chronodot stuff //
+/////////////////////////
+
+void Chronodot::getTime(ChronoTime *dest) {
+	dest->readTimeBytesFromWire();
+}
+
+void Chronodot::setTime(ChronoTime *src) {
+	src->writeTimeBytesToWire();
+}
+
+void Chronodot::getAlarmOneTime(ChronoTime *dest) {
+	dest->readAlarmOneBytesFromWire();
+}
+
+void Chronodot::setAlarmOneTime(ChronoTime *src) {
+	src->writeAlarmOneBytesToWire();
+}
+
+void Chronodot::getAlarmTwoTime(ChronoTime *dest) {
+	dest->readAlarmTwoBytesFromWire();
+}
+
+void Chronodot::setAlarmTwoTime(ChronoTime *src) {
+	src->writeAlarmTwoBytesToWire();
+}
+
+void Chronodot::updateOscilator(boolean enabled) {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_CONTROL);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	uint8_t control = Wire.read();
+	
+	control = (control & 0x7F) | (enabled ? 0x80 : 0x00);
+	
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_CONTROL);
+	Wire.write(control);
+	Wire.endTransmission();	
+}
+
+void Chronodot::updateBatterySquareWave(boolean enabled) {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_CONTROL);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	uint8_t control = Wire.read();
+	
+	control = (control & 0xBF) | (enabled ? 0x40 : 0x00);
+	
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_CONTROL);
+	Wire.write(control);
+	Wire.endTransmission();	
+}
+
+void Chronodot::updateAlarmOne(boolean enabled) {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_CONTROL);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	uint8_t control = Wire.read();
+	
+	control = (control & 0xFE) | (enabled ? 0x01 : 0x00);
+	
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_CONTROL);
+	Wire.write(control);
+	Wire.endTransmission();
+}
+
+void Chronodot::updateAlarmTwo(boolean enabled) {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_CONTROL);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	uint8_t control = Wire.read();
+	
+	control = (control & 0xFD) | (enabled ? 0x02 : 0x00);
+	
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_CONTROL);
+	Wire.write(control);
+	Wire.endTransmission();
+}
+
+void Chronodot::outputInterruptOnAlarm() {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_CONTROL);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	uint8_t control = Wire.read();
+	
+	control = control | 0xFB;	// Set the bit, that means issue interrupt on alarm match
+	
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_CONTROL);
+	Wire.write(control);
+	Wire.endTransmission();
+}
+
+void Chronodot::outputSquarewave(uint8_t speed) {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_CONTROL);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	uint8_t control = Wire.read();
+	
+	control = control & 0xE3;	// Clear the bit, that means output a squarewave, clear the speed bits
+	
+	control = control | ((speed & 0x03) << 3);	// Set the speed bits
+	
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_CONTROL);
+	Wire.write(control);
+	Wire.endTransmission();
+}
+
+bool Chronodot::getOscilatorStop() {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_STATUS);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	return Wire.read() & 0x80;
+}
+
+void Chronodot::resetOscilatorStop() {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_STATUS);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	uint8_t status = Wire.read();
+	
+	status = status & 0x7F;		// Clear the oscillator stop bit
+	
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_STATUS);
+	Wire.write(status);
+	Wire.endTransmission();
+}
+
+void Chronodot::update32kHzOutput(boolean enabled) {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_STATUS);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	uint8_t status = Wire.read();
+	
+	status = (status & 0xF7) | (enabled ? 0x08 : 0x00);
+	
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_STATUS);
+	Wire.write(status);
+	Wire.endTransmission();	
+}
+
+bool Chronodot::isBusy() {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_STATUS);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	return Wire.read() & 0x04;
+}
+
+bool Chronodot::alarmOneFired() {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_STATUS);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	return Wire.read() & 0x01;
+}
+
+void Chronodot::resetAlarmOne() {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_STATUS);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	uint8_t status = Wire.read();
+	
+	status = status & 0xFE;	// Clear the bit
+	
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_STATUS);
+	Wire.write(status);
+	Wire.endTransmission();	
+}
+
+bool Chronodot::alarmTwoFired() {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_STATUS);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	return Wire.read() & 0x02;
+}
+
+void Chronodot::resetAlarmTwo() {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_STATUS);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	uint8_t status = Wire.read();
+	
+	status = status & 0xFD;	// Clear the bit
+	
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_STATUS);
+	Wire.write(status);
+	Wire.endTransmission();	
+}
+
+uint8_t Chronodot::getAgingOffset() {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_AGING);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	
+	return Wire.read();
+}
+
+void Chronodot::setAgingOffset(uint8_t aging) {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_AGING);
+	Wire.write(aging);
+	Wire.endTransmission();	
+}
+
+float Chronodot::getTemperature() {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(REGISTER_TEMP);
+	Wire.endTransmission();
+	Wire.requestFrom(CHRONODOT_ADDRESS, 2);
+	
+	uint8_t whole = Wire.read();
+	uint8_t frac = Wire.read();
+	
+	float temp = (float) whole;
+	
+	temp = temp + (frac & 0x80 ? 0.5 : 0.0);
+	temp = temp + (frac & 0x40 ? 0.25 : 0.0);
+	
+	return temp;
+}
 
 //////////////////////////
 // Our ChronoTime stuff //

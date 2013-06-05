@@ -24,25 +24,24 @@
 #define ALARM_TWO_MATCH_DATE_H_M	0b00000000
 #define ALARM_TWO_MATCH_DAY_H_M		0b00010000
 
+#define SPEED_1_HZ					0x00
+#define SPEED_1_024_KHZ				0x01
+#define SPEED_4_096_KHZ				0x02
+#define SPEED_8_192_KHZ				0x03
+
 //////////////////////////
 // Our ChronoTime stuff //
 //////////////////////////
 
+class ChronoDot;
+
 class ChronoTime {
+
+	friend class Chronodot;
 
 public:
 	// Initialize
 	ChronoTime();
-	
-	// Ability to handle the raw data
-	
-	void readTimeBytesFromWire();
-	void readAlarmOneBytesFromWire();
-	void readAlarmTwoBytesFromWire();
-	
-	void writeTimeBytesToWire();
-	void writeAlarmOneBytesToWire();
-	void writeAlarmTwoBytesToWire();
 	
 	// Accessors
 	
@@ -68,10 +67,60 @@ public:
 	void setYear(uint8_t year);
   
 protected:
+
+	uint8_t data[8];
+
+	// Ability to handle the raw data
+
 	void clearData();
 	
-	uint8_t data[8];
+	void readTimeBytesFromWire();
+	void readAlarmOneBytesFromWire();
+	void readAlarmTwoBytesFromWire();
+	
+	void writeTimeBytesToWire();
+	void writeAlarmOneBytesToWire();
+	void writeAlarmTwoBytesToWire();
 		
+};
+
+class Chronodot {
+
+public:
+	static void getTime(ChronoTime *dest);
+	static void setTime(ChronoTime *src);
+	
+	static void getAlarmOneTime(ChronoTime *dest);
+	static void setAlarmOneTime(ChronoTime *src);
+	
+	static void getAlarmTwoTime(ChronoTime *dest);
+	static void setAlarmTwoTime(ChronoTime *src);
+	
+	static void updateOscilator(boolean enabled);
+	static void updateBatterySquareWave(boolean enabled);
+	static void updateAlarmOne(boolean enabled);
+	static void updateAlarmTwo(boolean enabled);
+	
+	static void outputInterruptOnAlarm();
+	static void outputSquarewave(uint8_t speed);
+	
+	static bool getOscilatorStop();
+	static void resetOscilatorStop();
+	
+	static void update32kHzOutput(boolean enabled);
+	
+	static bool isBusy();
+	
+	static bool alarmOneFired();
+	static void resetAlarmOne();
+	
+	static bool alarmTwoFired();
+	static void resetAlarmTwo();
+	
+	static uint8_t getAgingOffset();
+	static void setAgingOffset(uint8_t aging);
+	
+	static float getTemperature();
 };
 
 #endif
