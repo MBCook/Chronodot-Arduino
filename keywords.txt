@@ -1,0 +1,87 @@
+#######################################
+# Syntax Coloring Map For Chronodot
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+Chronodot	KEYWORD1
+ChronoTime	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+getSeconds	KEYWORD2
+setSeconds	KEYWORD2
+getMinutes	KEYWORD2
+setMinutes	KEYWORD2
+getHours	KEYWORD2
+setHours	KEYWORD2
+getDayOfWeek	KEYWORD2
+setDayOfWeek	KEYWORD2
+getDayOfMonth	KEYWORD2
+setDayOfMonth	KEYWORD2
+getMonth	KEYWORD2
+setMonth	KEYWORD2
+getYear	KEYWORD2
+setYear	KEYWORD2
+getTime	KEYWORD2
+setTime	KEYWORD2
+getAlarmOneTime	KEYWORD2
+setAlarmOneTime	KEYWORD2
+getAlarmTwoTime	KEYWORD2
+setAlarmTwoTime	KEYWORD2
+updateOscilator	KEYWORD2
+updateBatterySquareWave	KEYWORD2
+updateAlarmOne	KEYWORD2
+updateAlarmTwo	KEYWORD2
+outputInterruptOnAlarm	KEYWORD2
+outputSquarewave	KEYWORD2
+getOscilatorStop	KEYWORD2
+resetOscilatorStop	KEYWORD2
+update32kHzOutput	KEYWORD2
+isBusy	KEYWORD2
+alarmOneFired	KEYWORD2
+resetAlarmOne	KEYWORD2
+alarmTwoFired	KEYWORD2
+resetAlarmTwo	KEYWORD2
+getAgingOffset	KEYWORD2
+setAgingOffset	KEYWORD2
+getTemperature	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+SUNDAY	LITERAL1
+MONDAY	LITERAL1
+TUESDAY	LITERAL1
+WEDNESDAY	LITERAL1
+THURSDAY	LITERAL1
+SATURDAY	LITERAL1
+SUNDAY	LITERAL1
+
+ALARM_ONE_PER_SECOND	LITERAL1
+ALARM_ONE_MATCH_S	LITERAL1
+ALARM_ONE_MATCH_M_S	LITERAL1
+ALARM_ONE_MATCH_H_M_S	LITERAL1
+ALARM_ONE_MATCH_DATE_H_M_S	LITERAL1
+ALARM_ONE_MATCH_DAY_H_M_S	LITERAL1
+
+ALARM_TWO_PER_MINUTE	LITERAL1
+ALARM_TWO_MATCH_M	LITERAL1
+ALARM_TWO_MATCH_H_M	LITERAL1
+ALARM_TWO_MATCH_DATE_H_M	LITERAL1
+ALARM_TWO_MATCH_DAY_H_M	LITERAL1
+
+SPEED_1_HZ	LITERAL1
+SPEED_1_024_KHZ	LITERAL1
+SPEED_4_096_KHZ	LITERAL1
+SPEED_8_192_KHZ	LITERAL1
+
