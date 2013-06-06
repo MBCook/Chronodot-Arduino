@@ -14,7 +14,7 @@
 #define REGISTER_TEMP		17
 
 #define FROM_BCD_DIGIT(a)	a
-#define FROM_BCD_DIGITS(a)	((((a) >> 4) * 10) + (a))
+#define FROM_BCD_DIGITS(a)	((((a) >> 4) * 10) + ((a) & 0x0F))
 #define TO_BCD_DIGIT(a)		((a) % 10)
 #define TO_BCD_DIGITS(a)	((((a) / 10) << 4) + TO_BCD_DIGIT(a))
 
@@ -32,6 +32,42 @@
 #define ALARM_BIT_THREE			0x04
 #define ALARM_BIT_FOUR			0x08
 #define ALARM_DAY_DATE			0x10
+
+/////////////////////
+// Utility methods //
+/////////////////////
+
+void startWrite(uint8_t registerAddress) {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(registerAddress);
+}
+
+void writeByte(uint8_t byte) {
+	Wire.write(byte);
+}
+
+void writeBytes(uint8_t *bytes, uint8_t count) {
+	Wire.write(bytes, count);
+}
+
+void endWrite() {
+	Wire.endTransmission();
+}
+	
+void startRead(uint8_t registerAddress, uint8_t bytes) {
+	Wire.beginTransmission(CHRONODOT_ADDRESS);
+	Wire.write(registerAddress);
+	Wire.endTransmission();
+	Wire.requestFrom((uint8_t) CHRONODOT_ADDRESS, bytes);
+}
+
+uint8_t readByte() {
+	while (Wire.available() == 0) {
+		// Wait
+	}
+	
+	return Wire.read();
+}
 
 /////////////////////////
 // Our Chronodot stuff //
@@ -62,227 +98,179 @@ void Chronodot::setAlarmTwoTime(ChronoTime *src) {
 }
 
 void Chronodot::updateOscilator(bool enabled) {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_CONTROL);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_CONTROL, 1);
 	
-	uint8_t control = Wire.read();
+	uint8_t control = readByte();
 	
 	control = (control & 0x7F) | (enabled ? 0x80 : 0x00);
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_CONTROL);
-	Wire.write(control);
-	Wire.endTransmission();	
+	writeByte(REGISTER_CONTROL);
+	writeByte(control);
+	endWrite();	
 }
 
 void Chronodot::updateBatterySquareWave(bool enabled) {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_CONTROL);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_CONTROL, 1);
 	
-	uint8_t control = Wire.read();
+	uint8_t control = readByte();
 	
 	control = (control & 0xBF) | (enabled ? 0x40 : 0x00);
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_CONTROL);
-	Wire.write(control);
-	Wire.endTransmission();	
+	writeByte(REGISTER_CONTROL);
+	writeByte(control);
+	endWrite();	
 }
 
 void Chronodot::updateAlarmOne(bool enabled) {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_CONTROL);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_CONTROL, 1);
 	
-	uint8_t control = Wire.read();
+	uint8_t control = readByte();
 	
 	control = (control & 0xFE) | (enabled ? 0x01 : 0x00);
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_CONTROL);
-	Wire.write(control);
-	Wire.endTransmission();
+	writeByte(REGISTER_CONTROL);
+	writeByte(control);
+	endWrite();
 }
 
 void Chronodot::updateAlarmTwo(bool enabled) {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_CONTROL);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_CONTROL, 1);
 	
-	uint8_t control = Wire.read();
+	uint8_t control = readByte();
 	
 	control = (control & 0xFD) | (enabled ? 0x02 : 0x00);
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_CONTROL);
-	Wire.write(control);
-	Wire.endTransmission();
+	writeByte(REGISTER_CONTROL);
+	writeByte(control);
+	endWrite();
 }
 
 void Chronodot::outputInterruptOnAlarm() {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_CONTROL);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_CONTROL, 1);
 	
-	uint8_t control = Wire.read();
+	uint8_t control = readByte();
 	
 	control = control | 0xFB;	// Set the bit, that means issue interrupt on alarm match
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_CONTROL);
-	Wire.write(control);
-	Wire.endTransmission();
+	writeByte(REGISTER_CONTROL);
+	writeByte(control);
+	endWrite();
 }
 
 void Chronodot::outputSquarewave(uint8_t speed) {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_CONTROL);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_CONTROL, 1);
 	
-	uint8_t control = Wire.read();
+	uint8_t control = readByte();
 	
 	control = control & 0xE3;	// Clear the bit, that means output a squarewave, clear the speed bits
 	
 	control = control | ((speed & 0x03) << 3);	// Set the speed bits
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_CONTROL);
-	Wire.write(control);
-	Wire.endTransmission();
+	writeByte(REGISTER_CONTROL);
+	writeByte(control);
+	endWrite();
 }
 
 bool Chronodot::getOscilatorStop() {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_STATUS);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_STATUS, 1);
 	
-	return Wire.read() & 0x80;
+	return readByte() & 0x80;
 }
 
 void Chronodot::resetOscilatorStop() {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_STATUS);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_STATUS, 1);
 	
-	uint8_t status = Wire.read();
+	uint8_t status = readByte();
 	
 	status = status & 0x7F;		// Clear the oscillator stop bit
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_STATUS);
-	Wire.write(status);
-	Wire.endTransmission();
+	writeByte(REGISTER_STATUS);
+	writeByte(status);
+	endWrite();
 }
 
 void Chronodot::update32kHzOutput(bool enabled) {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_STATUS);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_STATUS, 1);
 	
-	uint8_t status = Wire.read();
+	uint8_t status = readByte();
 	
 	status = (status & 0xF7) | (enabled ? 0x08 : 0x00);
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_STATUS);
-	Wire.write(status);
-	Wire.endTransmission();	
+	writeByte(REGISTER_STATUS);
+	writeByte(status);
+	endWrite();	
 }
 
 bool Chronodot::isBusy() {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_STATUS);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_STATUS, 1);
 	
-	return Wire.read() & 0x04;
+	return readByte() & 0x04;
 }
 
 bool Chronodot::alarmOneFired() {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_STATUS);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_STATUS, 1);
 	
-	return Wire.read() & 0x01;
+	return readByte() & 0x01;
 }
 
 void Chronodot::resetAlarmOne() {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_STATUS);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_STATUS, 1);
 	
-	uint8_t status = Wire.read();
+	uint8_t status = readByte();
 	
 	status = status & 0xFE;	// Clear the bit
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_STATUS);
-	Wire.write(status);
-	Wire.endTransmission();	
+	writeByte(REGISTER_STATUS);
+	writeByte(status);
+	endWrite();	
 }
 
 bool Chronodot::alarmTwoFired() {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_STATUS);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_STATUS, 1);
 	
-	return Wire.read() & 0x02;
+	return readByte() & 0x02;
 }
 
 void Chronodot::resetAlarmTwo() {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_STATUS);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_STATUS, 1);
 	
-	uint8_t status = Wire.read();
+	uint8_t status = readByte();
 	
 	status = status & 0xFD;	// Clear the bit
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_STATUS);
-	Wire.write(status);
-	Wire.endTransmission();	
+	writeByte(REGISTER_STATUS);
+	writeByte(status);
+	endWrite();	
 }
 
 int8_t Chronodot::getAgingOffset() {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_AGING);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
+	startRead(REGISTER_AGING, 1);
 	
-	return (int8_t) Wire.read();
+	return (int8_t) readByte();
 }
 
 void Chronodot::setAgingOffset(int8_t aging) {
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_AGING);
-	Wire.write((uint8_t) aging);
-	Wire.endTransmission();	
+	writeByte(REGISTER_AGING);
+	writeByte((uint8_t) aging);
+	endWrite();	
 }
 
 float Chronodot::getTemperature() {
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_TEMP);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 2);
+	startRead(REGISTER_TEMP, 2);
 	
-	uint8_t whole = Wire.read();
-	uint8_t frac = Wire.read();
+	uint8_t whole = readByte();
+	uint8_t frac = readByte();
 	
 	float temp = (float) whole;
 	
@@ -309,33 +297,20 @@ void ChronoTime::readTimeBytesFromWire() {
 	
 	// This is the easy case, just read all the bytes in
 	
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_TIME);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 7);
-	
-	Serial.println("");
-	
+	startRead(REGISTER_TIME, 7);
+
 	for (uint8_t i = 0; i < 7; i++) {
-		while (Wire.available() == 0) {
-			// Wait for data
-		}
-		this->data[i] = Wire.read();
-		Serial.print("Byte in: ");
-		Serial.println(this->data[i]);
+		this->data[i] = readByte();
 	}
 }
 
 void ChronoTime::readAlarmOneBytesFromWire() {
 	this->clearData();
 	
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_ALARM_ONE);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 4);
+	startRead(REGISTER_ALARM_ONE, 4);
 	
 	for (uint8_t i = 0; i < 4; i++)
-		this->data[i] = Wire.read();
+		this->data[i] = readByte();
 		
 	// Figure out if it's day or date
 	
@@ -359,13 +334,10 @@ void ChronoTime::readAlarmOneBytesFromWire() {
 void ChronoTime::readAlarmTwoBytesFromWire() {
 	this->clearData();
 	
-	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_ALARM_TWO);
-	Wire.endTransmission();
-	Wire.requestFrom(CHRONODOT_ADDRESS, 3);
-	
+	startRead(REGISTER_ALARM_TWO, 3);
+		
 	for (uint8_t i = 0; i < 3; i++)
-		this->data[i + 1] = Wire.read();
+		this->data[i + 1] = readByte();
 		
 	// Figure out if it's day or date
 	
@@ -387,9 +359,9 @@ void ChronoTime::readAlarmTwoBytesFromWire() {
 
 void ChronoTime::writeTimeBytesToWire() {
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_TIME);
-	Wire.write(this->data, 7);
-	Wire.endTransmission();
+	writeByte(REGISTER_TIME);
+	writeBytes(this->data, 7);
+	endWrite();
 }
 
 void ChronoTime::writeAlarmOneBytesToWire() {
@@ -397,23 +369,23 @@ void ChronoTime::writeAlarmOneBytesToWire() {
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
 
-	Wire.write(REGISTER_ALARM_ONE);
+	writeByte(REGISTER_ALARM_ONE);
 
 	// First 3 bytes are normal, and we use the high bit to transfer part of the alarm type
 
-	Wire.write(this->data[SECOND_POSITION] | (alarmType & ALARM_BIT_ONE ? 0x80 : 0));
-	Wire.write(this->data[MINUTE_POSITION] | (alarmType & ALARM_BIT_TWO ? 0x80 : 0));
-	Wire.write(this->data[HOUR_POSITION] | (alarmType & ALARM_BIT_THREE ? 0x80 : 0));
+	writeByte(this->data[SECOND_POSITION] | (alarmType & ALARM_BIT_ONE ? 0x80 : 0));
+	writeByte(this->data[MINUTE_POSITION] | (alarmType & ALARM_BIT_TWO ? 0x80 : 0));
+	writeByte(this->data[HOUR_POSITION] | (alarmType & ALARM_BIT_THREE ? 0x80 : 0));
 	
 	// Now we need to send the right byte, either the day or the date
 	
 	if (alarmType & ALARM_DAY_DATE) {	
-		Wire.write(this->data[DAY_OF_WEEK_POSITION] | (alarmType & ALARM_BIT_FOUR ? 0x80 : 0) | 0x40);
+		writeByte(this->data[DAY_OF_WEEK_POSITION] | (alarmType & ALARM_BIT_FOUR ? 0x80 : 0) | 0x40);
 	} else {
-		Wire.write(this->data[DAY_OF_MONTH_POSITION] | (alarmType & ALARM_BIT_FOUR ? 0x80 : 0));
+		writeByte(this->data[DAY_OF_MONTH_POSITION] | (alarmType & ALARM_BIT_FOUR ? 0x80 : 0));
 	}
 		
-	Wire.endTransmission();
+	endWrite();
 }
 
 void ChronoTime::writeAlarmTwoBytesToWire() {
@@ -421,22 +393,22 @@ void ChronoTime::writeAlarmTwoBytesToWire() {
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
 
-	Wire.write(REGISTER_ALARM_ONE);
+	writeByte(REGISTER_ALARM_ONE);
 
 	// First two bytes are normal, and we use the high bit to transfer part of the alarm type
 
-	Wire.write(this->data[MINUTE_POSITION] | (alarmType & ALARM_BIT_TWO ? 0x80 : 0));
-	Wire.write(this->data[HOUR_POSITION] | (alarmType & ALARM_BIT_THREE ? 0x80 : 0));
+	writeByte(this->data[MINUTE_POSITION] | (alarmType & ALARM_BIT_TWO ? 0x80 : 0));
+	writeByte(this->data[HOUR_POSITION] | (alarmType & ALARM_BIT_THREE ? 0x80 : 0));
 	
 	// Now we need to send the right byte, either the day or the date
 	
 	if (alarmType & ALARM_DAY_DATE) {	
-		Wire.write(this->data[DAY_OF_WEEK_POSITION] | (alarmType & ALARM_BIT_FOUR ? 0x80 : 0) | 0x40);
+		writeByte(this->data[DAY_OF_WEEK_POSITION] | (alarmType & ALARM_BIT_FOUR ? 0x80 : 0) | 0x40);
 	} else {
-		Wire.write(this->data[DAY_OF_MONTH_POSITION] | (alarmType & ALARM_BIT_FOUR ? 0x80 : 0));
+		writeByte(this->data[DAY_OF_MONTH_POSITION] | (alarmType & ALARM_BIT_FOUR ? 0x80 : 0));
 	}
 		
-	Wire.endTransmission();
+	endWrite();
 }
 
 uint8_t ChronoTime::getSeconds() {
