@@ -81,7 +81,7 @@ protected:
 	void writeTimeBytesToWire();
 	void writeAlarmOneBytesToWire();
 	void writeAlarmTwoBytesToWire();
-		
+	
 };
 
 class Chronodot {
@@ -96,10 +96,10 @@ public:
 	static void getAlarmTwoTime(ChronoTime *dest);
 	static void setAlarmTwoTime(ChronoTime *src);
 	
-	static void updateOscilator(boolean enabled);
-	static void updateBatterySquareWave(boolean enabled);
-	static void updateAlarmOne(boolean enabled);
-	static void updateAlarmTwo(boolean enabled);
+	static void updateOscilator(bool enabled);
+	static void updateBatterySquareWave(bool enabled);
+	static void updateAlarmOne(bool enabled);
+	static void updateAlarmTwo(bool enabled);
 	
 	static void outputInterruptOnAlarm();
 	static void outputSquarewave(uint8_t speed);
@@ -107,7 +107,7 @@ public:
 	static bool getOscilatorStop();
 	static void resetOscilatorStop();
 	
-	static void update32kHzOutput(boolean enabled);
+	static void update32kHzOutput(bool enabled);
 	
 	static bool isBusy();
 	
@@ -117,8 +117,8 @@ public:
 	static bool alarmTwoFired();
 	static void resetAlarmTwo();
 	
-	static uint8_t getAgingOffset();
-	static void setAgingOffset(uint8_t aging);
+	static int8_t getAgingOffset();
+	static void setAgingOffset(int8_t aging);
 	
 	static float getTemperature();
 };

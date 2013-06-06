@@ -61,7 +61,7 @@ void Chronodot::setAlarmTwoTime(ChronoTime *src) {
 	src->writeAlarmTwoBytesToWire();
 }
 
-void Chronodot::updateOscilator(boolean enabled) {
+void Chronodot::updateOscilator(bool enabled) {
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
 	Wire.write(REGISTER_CONTROL);
 	Wire.endTransmission();
@@ -77,7 +77,7 @@ void Chronodot::updateOscilator(boolean enabled) {
 	Wire.endTransmission();	
 }
 
-void Chronodot::updateBatterySquareWave(boolean enabled) {
+void Chronodot::updateBatterySquareWave(bool enabled) {
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
 	Wire.write(REGISTER_CONTROL);
 	Wire.endTransmission();
@@ -93,7 +93,7 @@ void Chronodot::updateBatterySquareWave(boolean enabled) {
 	Wire.endTransmission();	
 }
 
-void Chronodot::updateAlarmOne(boolean enabled) {
+void Chronodot::updateAlarmOne(bool enabled) {
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
 	Wire.write(REGISTER_CONTROL);
 	Wire.endTransmission();
@@ -109,7 +109,7 @@ void Chronodot::updateAlarmOne(boolean enabled) {
 	Wire.endTransmission();
 }
 
-void Chronodot::updateAlarmTwo(boolean enabled) {
+void Chronodot::updateAlarmTwo(bool enabled) {
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
 	Wire.write(REGISTER_CONTROL);
 	Wire.endTransmission();
@@ -184,7 +184,7 @@ void Chronodot::resetOscilatorStop() {
 	Wire.endTransmission();
 }
 
-void Chronodot::update32kHzOutput(boolean enabled) {
+void Chronodot::update32kHzOutput(bool enabled) {
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
 	Wire.write(REGISTER_STATUS);
 	Wire.endTransmission();
@@ -259,19 +259,19 @@ void Chronodot::resetAlarmTwo() {
 	Wire.endTransmission();	
 }
 
-uint8_t Chronodot::getAgingOffset() {
+int8_t Chronodot::getAgingOffset() {
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
 	Wire.write(REGISTER_AGING);
 	Wire.endTransmission();
 	Wire.requestFrom(CHRONODOT_ADDRESS, 1);
 	
-	return Wire.read();
+	return (int8_t) Wire.read();
 }
 
-void Chronodot::setAgingOffset(uint8_t aging) {
+void Chronodot::setAgingOffset(int8_t aging) {
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
 	Wire.write(REGISTER_AGING);
-	Wire.write(aging);
+	Wire.write((uint8_t) aging);
 	Wire.endTransmission();	
 }
 
@@ -314,8 +314,16 @@ void ChronoTime::readTimeBytesFromWire() {
 	Wire.endTransmission();
 	Wire.requestFrom(CHRONODOT_ADDRESS, 7);
 	
-	for (uint8_t i = 0; i < 7; i++)
+	Serial.println("");
+	
+	for (uint8_t i = 0; i < 7; i++) {
+		while (Wire.available() == 0) {
+			// Wait for data
+		}
 		this->data[i] = Wire.read();
+		Serial.print("Byte in: ");
+		Serial.println(this->data[i]);
+	}
 }
 
 void ChronoTime::readAlarmOneBytesFromWire() {
@@ -448,8 +456,6 @@ void ChronoTime::setMinutes(uint8_t minutes) {
 }
 
 uint8_t ChronoTime::getHours() {
-	// Special handling here for 12/24 hour stuff
-	
 	return FROM_BCD_DIGITS(this->data[HOUR_POSITION]);
 }
 
@@ -479,7 +485,7 @@ uint8_t ChronoTime::getMonth() {
 	// Special handling because of the century,
 	// so we have to mask off the first bit of the byte
 	
-	return FROM_BCD_DIGITS(0x7F & this->data[HOUR_POSITION]);
+	return FROM_BCD_DIGITS(0x7F & this->data[MONTH_POSITION]);
 }
 
 void ChronoTime::setMonth(uint8_t month) {
