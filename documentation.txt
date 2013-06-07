@@ -1,0 +1,7 @@
+Chronodot library for Arduino
+
+Version 0.0
+
+by Michael Cook
+
+contact: foobarsoft@foobarsoft.com
