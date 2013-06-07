@@ -140,22 +140,22 @@ void showTime() {
 void showStatus() {
 	Serial.println("");
 	
-	bool oscilatorStop = Chronodot::getOscilatorStop();
+	bool oscillatorStop = Chronodot::getOscillatorStop();
 	
-	Serial.print("Oscilator stop is ");
-	Serial.println(oscilatorStop);
+	Serial.print("Oscillator stop is ");
+	Serial.println(oscillatorStop);
 	
 	bool busy = Chronodot::isBusy();
 	
 	Serial.print("Busy flag is ");
 	Serial.println(busy);
 	
-	bool alarm = Chronodot::alarmOneFired();
+	bool alarm = Chronodot::getAlarmOneFired();
 	
 	Serial.print("Alarm one fired is ");
 	Serial.println(alarm);
 	
-	alarm = Chronodot::alarmTwoFired();
+	alarm = Chronodot::getAlarmTwoFired();
 	
 	Serial.print("Alarm two fired is ");
 	Serial.println(alarm);

@@ -24,10 +24,11 @@
 #define ALARM_TWO_MATCH_DATE_H_M	0b00000000
 #define ALARM_TWO_MATCH_DAY_H_M		0b00010000
 
-#define SPEED_1_HZ					0x00
-#define SPEED_1_024_KHZ				0x01
-#define SPEED_4_096_KHZ				0x02
-#define SPEED_8_192_KHZ				0x03
+#define SPEED_1_HZ					(0x00 << 3)	// Pre-shifted to where we'll want it
+#define SPEED_1_024_KHZ				(0x01 << 3)
+#define SPEED_4_096_KHZ				(0x02 << 3)
+#define SPEED_8_192_KHZ				(0x03 << 3)
+#define SPEED_DISABLED				0xFF
 
 //////////////////////////
 // Our ChronoTime stuff //
@@ -96,30 +97,42 @@ public:
 	static void getAlarmTwoTime(ChronoTime *dest);
 	static void setAlarmTwoTime(ChronoTime *src);
 	
-	static void updateOscilator(bool enabled);
-	static void updateBatterySquareWave(bool enabled);
-	static void updateAlarmOne(bool enabled);
-	static void updateAlarmTwo(bool enabled);
+	static bool getOscillatorEnabled();
+	static void enableOscillator(bool enabled);
 	
+	static bool getBatterySquareWaveEnabled();
+	static void enableBatterySquareWave(bool enabled);
+	
+	static bool getAlarmOneEnabled();
+	static void enableAlarmOne(bool enabled);
+	
+	static bool getAlarmTwoEnabled();
+	static void enableAlarmTwo(bool enabled);
+	
+	static bool getOutputInterruptOnAlarm();
 	static void outputInterruptOnAlarm();
-	static void outputSquarewave(uint8_t speed);
 	
-	static bool getOscilatorStop();
-	static void resetOscilatorStop();
+	static uint8_t getOutputSquarewaveSpeed();		// Returns SPEED_DISABLED if disabled
+	static void outputSquarewaveSpeed(uint8_t speed);
 	
-	static void update32kHzOutput(bool enabled);
+	static bool getOscillatorStop();
+	static void resetOscillatorStop();
+	
+	static bool get32kHzOutputEnabled();
+	static void enable32kHzOutput(bool enabled);
 	
 	static bool isBusy();
 	
-	static bool alarmOneFired();
-	static void resetAlarmOne();
+	static bool getAlarmOneFired();
+	static void resetAlarmOneFired();
 	
-	static bool alarmTwoFired();
-	static void resetAlarmTwo();
+	static bool getAlarmTwoFired();
+	static void resetAlarmTwoFired();
 	
 	static int8_t getAgingOffset();
 	static void setAgingOffset(int8_t aging);
 	
+	static void senseTemperature(bool wait);		// On wait, holds until sense complete
 	static float getTemperature();
 };
 

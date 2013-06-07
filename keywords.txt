@@ -33,22 +33,30 @@ getAlarmOneTime	KEYWORD2
 setAlarmOneTime	KEYWORD2
 getAlarmTwoTime	KEYWORD2
 setAlarmTwoTime	KEYWORD2
-updateOscilator	KEYWORD2
-updateBatterySquareWave	KEYWORD2
-updateAlarmOne	KEYWORD2
-updateAlarmTwo	KEYWORD2
+getOscillatorEnabled	KEYWORD2
+enableOscillator	KEYWORD2
+getBatterySquareWaveEnabled	KEYWORD2
+enableBatterySquareWave	KEYWORD2
+getAlarmOneEnabled	KEYWORD2
+enableAlarmOne	KEYWORD2
+getAlarmTwoEnabled	KEYWORD2
+enableAlarmTwo	KEYWORD2
+getOutputInterruptOnAlarm	KEYWORD2
 outputInterruptOnAlarm	KEYWORD2
-outputSquarewave	KEYWORD2
-getOscilatorStop	KEYWORD2
-resetOscilatorStop	KEYWORD2
-update32kHzOutput	KEYWORD2
+getOutputSquarewaveSpeed	KEYWORD2
+outputSquarewaveSpeed	KEYWORD2
+getOscillatorStop	KEYWORD2
+resetOscillatorStop	KEYWORD2
+get32kHzOutputEnabled	KEYWORD2
+enable32kHzOutput	KEYWORD2
 isBusy	KEYWORD2
-alarmOneFired	KEYWORD2
-resetAlarmOne	KEYWORD2
-alarmTwoFired	KEYWORD2
-resetAlarmTwo	KEYWORD2
+getAlarmOneFired	KEYWORD2
+resetAlarmOneFired	KEYWORD2
+getAlarmTwoFired	KEYWORD2
+resetAlarmTwoFired	KEYWORD2
 getAgingOffset	KEYWORD2
-setAgingOffset	KEYWORD2
+setAgingOffset	KEYWORD2	
+senseTemperature	KEYWORD2
 getTemperature	KEYWORD2
 
 #######################################
@@ -84,4 +92,5 @@ SPEED_1_HZ	LITERAL1
 SPEED_1_024_KHZ	LITERAL1
 SPEED_4_096_KHZ	LITERAL1
 SPEED_8_192_KHZ	LITERAL1
+SPEED_DISABLED	LITERAL1
 
