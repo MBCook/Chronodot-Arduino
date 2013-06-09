@@ -54,8 +54,8 @@ void loop() {
 			}
 			
 			lastInput = Serial.read();
-			
-                        Serial.print(lastInput);        // Echo it back out
+
+			Serial.println(lastInput);
 
 			while (Serial.available() > 0)	// Eat up any other input
 				Serial.read();
@@ -139,10 +139,44 @@ void showTime() {
 
 void showStatus() {
 	Serial.println("");
+
+	bool batteryOscillator = Chronodot::getOscillatorEnabled();
+	
+	Serial.print("Oscillator enabled on battery is ");
+	Serial.println(batteryOscillator);
+
+	bool batterySquarewave = Chronodot::getBatterySquareWaveEnabled();
+	
+	Serial.print("Battery backed square wave enabled is ");
+	Serial.println(batterySquarewave);
+	
+	uint8_t speed = Chronodot::getOutputSquarewaveSpeed();
+	
+	switch (speed) {
+		case SPEED_1_HZ:
+			Serial.println("Square wave output is 1 Hz");
+			break;
+		case SPEED_1_024_KHZ:
+			Serial.println("Square wave output is 1.024 kHz");
+			break;
+		case SPEED_4_096_KHZ:
+			Serial.println("Square wave output is 4.096 kHz");
+			break;
+		case SPEED_8_192_KHZ:
+			Serial.println("Square wave output is 8.192 kHz");
+			break;
+		default:
+			Serial.println("Square wave off, interupt on alarm");
+	}
+	
+	bool thirtyTwo = Chronodot::get32kHzOutputEnabled();
+	
+	Serial.print("32kHz otuput enabled is ");
+	Serial.println(thirtyTwo);
 	
 	bool oscillatorStop = Chronodot::getOscillatorStop();
 	
-	Serial.print("Oscillator stop is ");
+	Serial.print("Oscillator was stopped is ");
 	Serial.println(oscillatorStop);
 	
 	bool busy = Chronodot::isBusy();
@@ -185,5 +219,124 @@ void alarmSettings() {
 }
 
 void generalSettings() {
+	while (true) {
+		Serial.println("");
+		Serial.println("General Settings");
+		Serial.println("---------");
+		Serial.println("1. Toggle battery oscillator");
+		Serial.println("2. Toggle battery square wave");	
+		Serial.println("3. Trigger temperature reading");
+		Serial.println("4. Set interrupt on alarm");
+		Serial.println("5. Output 1 Hz square wave");
+		Serial.println("6. Output 1.024 kHz square wave");
+		Serial.println("7. Output 4.096 kHz square wave");
+		Serial.println("8. Output 8.196 kHz square wave");
+		Serial.println("9. Reset oscillator stop");
+		Serial.println("0. Toggle 32 kHz out");
+		Serial.println("");
+		Serial.println("x. Back to main menu");
+		Serial.println("");
+	
+		lastInput = 0;
+	
+		while (lastInput == 0) {
+			Serial.print("? ");
+		
+			while (Serial.available() == 0) {
+				// Just wait
+			}
+		
+			lastInput = Serial.read();
 
+			Serial.println(lastInput);
+
+			while (Serial.available() > 0)	// Eat up any other input
+				Serial.read();
+			
+			Serial.println("");
+			
+			bool old;		// Not allowed in the switch with this compiler
+			
+			switch (lastInput) {
+				case '1':
+					old = Chronodot::getOscillatorEnabled();
+					
+					Chronodot::enableOscillator(!old);
+					
+					Serial.print("Battery oscillator is now ");
+					Serial.println(!old);
+					
+					break;
+				case '2':
+					old = Chronodot::getBatterySquareWaveEnabled();
+					
+					Chronodot::enableBatterySquareWave(!old);
+					
+					Serial.print("Battery square wave is now ");
+					Serial.println(!old);
+					
+					break;
+				case '3':
+					Chronodot::senseTemperature(true);
+					
+					Serial.println("Temperature reading started");
+
+					Serial.print("Temperature is ");
+					Serial.print(Chronodot::getTemperature());
+					Serial.println(" C");
+					
+					break;
+				case '4':
+					Chronodot::outputInterruptOnAlarm();
+					
+					Serial.println("Interrupt on alarm set");
+
+					break;
+				case '5':
+					Chronodot::outputSquarewaveSpeed(SPEED_1_HZ);
+					
+					Serial.println("Squarewave output is 1 Hz");
+
+					break;
+				case '6':
+					Chronodot::outputSquarewaveSpeed(SPEED_1_024_KHZ);
+					
+					Serial.println("Squarewave output is 1.024 kHz");
+
+					break;				
+				case '7':
+					Chronodot::outputSquarewaveSpeed(SPEED_4_096_KHZ);
+					
+					Serial.println("Squarewave output is 4.096 kHz");
+
+					break;				
+				case '8':
+					Chronodot::outputSquarewaveSpeed(SPEED_8_192_KHZ);
+					
+					Serial.println("Squarewave output is 8.192 kHz");
+
+					break;				
+				case '9':
+					Chronodot::resetOscillatorStop();
+					
+					Serial.println("Oscillator stop flag reset");
+
+					break;
+				case '0':
+					old = Chronodot::get32kHzOutputEnabled();
+					
+					Chronodot::enable32kHzOutput(!old);
+					
+					Serial.print("32kHz output enabled is ");
+					Serial.println(!old);
+					
+					break;
+				case 'x':
+				case 'X':
+					return;					// Back to the main menu
+				default:
+					lastInput = 0;			// Bad input, force the prompt to re-display
+			}
+		}
+	}
 }
