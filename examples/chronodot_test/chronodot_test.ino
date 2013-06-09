@@ -94,8 +94,6 @@ void loop() {
 ///////////////////////////////////
 
 void showTime() {
-	Serial.println("");
-	
 	// Read in the current time
 	
 	Chronodot::getTime(&myTime);	
@@ -233,7 +231,184 @@ void showStatus() {
 ///////////////////////////////
 
 void changeTime() {
+	char buffer[100];
 
+	Serial.println("");
+	Serial.println("Please enter the time in the form:");
+	Serial.println("");
+	Serial.println("7, 1/24/05 23:18:12 d");
+	Serial.println("");
+	Serial.println("The first digit is the day (1 = Sunday, 7 = Saturday),");
+	Serial.println("use two digits for the year, and use 24h time.");
+	Serial.println("The 'd' is how we know you're done typing.");
+	Serial.println("");
+	Serial.println("Enter 'x' to return to the main menu.");
+
+	while (true) {
+		Serial.println("");
+		Serial.print("? ");
+	
+		// We're going to gather up characters until we get an 'x', 'd', or buffer is full
+		
+		uint8_t i = 0;
+		
+		while (true) {
+			while (Serial.available() == 0) {
+				// Just wait
+			}
+			
+			buffer[i] = Serial.read();
+			
+			Serial.print(buffer[i]);
+			
+			if (buffer[i] == 8) {
+				// Delete character, move back one
+				
+				i = i - 2;
+			} else if (buffer[i] == 'd' || buffer[i] == 'D') {
+				buffer[i + 1] = 0;
+				
+				break;			// We got what we needed
+			} else if (buffer[i] == 'x' || buffer[i] == 'X') {
+				return;			// Back to the main menu
+			} else if (i >= 99) {
+				Serial.println("");
+				Serial.println("Input too long.");
+				
+				i = 255;		// Signal that there was a problem
+				
+				break;
+			}
+			
+			i++;
+		}
+		
+		if (i == 255) {
+			continue;	// Try getting input again, they messed up
+		}
+	
+		// We've got our string, we're going to try to parse it out
+		
+		uint8_t numbers[7];
+		
+		uint8_t start = 0;
+		uint8_t nextStart = 0;
+		
+		Serial.println("Input done");
+		
+		for (uint8_t i = 0; i < 7; i++) {
+			numbers[i] = getNextNumber(buffer, start, &nextStart);
+			
+			if (nextStart == 255 && i != 6) {
+				Serial.println("");
+				Serial.println("Didn't get enough numbers");
+				
+				i = 255;
+				
+				break;
+			}
+			
+			start = nextStart;
+		}
+		
+		if (i == 255)
+			continue;	// They messed up
+		
+		// OK, numbers contains all the fields. Do some quick validation
+		
+		Serial.println("Verifying...");
+		
+		if (numbers[0] == 0 || numbers[0] > 7) {
+			Serial.println("");
+			Serial.println("Day of week out of range");
+			
+			continue;
+		} else if (numbers[1] == 0 || numbers[1] > 12) {
+			Serial.println("");
+			Serial.println("Month out of range");
+			
+			continue;
+		} else if (numbers[2] == 0 || numbers[2] > 31) {
+			Serial.println("");
+			Serial.println("Day of month out of range");
+			
+			continue;
+		} else if (numbers[4] >= 24) {
+			Serial.println("");
+			Serial.println("Hours out of range");
+			
+			continue;
+		} else if (numbers[5] >= 59) {
+			Serial.println("");
+			Serial.println("Minutes out of range");
+			
+			continue;
+		} else if (numbers[6] >= 59) {
+
+			Serial.println("");
+			Serial.println("Seconds out of range");
+			
+			continue;
+		}
+		
+		// OK, that's it. Update our time.
+		
+		Serial.println("Preparing...");
+		
+		myTime.setDayOfWeek(numbers[0]);
+		myTime.setMonth(numbers[1]);
+		myTime.setDayOfMonth(numbers[2]);
+		myTime.setYear(numbers[3]);
+		myTime.setHours(numbers[4]);
+		myTime.setMinutes(numbers[5]);
+		myTime.setSeconds(numbers[6]);
+		
+		Serial.println("Updating...");
+		
+		Chronodot::setTime(&myTime);
+	
+		// Show them the result, go back to main menu
+	
+		Serial.println("");
+		Serial.print("Time is now: ");
+		
+		showTime();
+		
+		return;
+	}
+}
+
+uint8_t getNextNumber(char *data, uint8_t start, uint8_t *nextStart) {
+	uint8_t working = 0;
+	
+	bool foundNumbers = false;
+	
+	for (uint8_t i = start; i < 255; i++) {
+		
+		if (data[i] >= '0' && data[i] <= '9') {
+			foundNumbers = true;
+			working = working * 10 + (data[i] - '0');
+		} else if (data[i] == 0 || data[i] == 'd' || data[i] == 'D') {
+			Serial.println("\tFound end of string terminator");
+			// End of the string
+			
+			*nextStart = 255;
+			
+			return working;
+		} else if (!foundNumbers) {
+			// We're just eating up characters before we start doing things
+		} else {
+			// We're done with the numbers. Tell the caller where the next data may start.
+			
+			*nextStart = i;
+			
+			// Return what we got
+			
+			return working;
+		}
+	}
+	
+	return working;	// Shouldn't get here in correct operation
 }
 
 //////////////////////////////////
