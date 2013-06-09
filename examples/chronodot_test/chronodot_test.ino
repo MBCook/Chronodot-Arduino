@@ -2,16 +2,10 @@
 #include <Chronodot.h>
 #include <Arduino.h>
 
-#define MAIN_MENU			0
-#define CHANGE_TIME			1
-#define ALARM_MENU			2
-#define CHANGE_ALARM_ONE	3
-#define CHANGE_ALARM_TWO	4
-#define SETTINGS			5
+ChronoTime myTime;		// The time variable we'll use
+char lastInput;			// The last byte we read from serial
 
-ChronoTime myTime;
-char currentMenu;
-char lastInput;
+// Human readable names for the times we'll be printing out
 
 char *daysOfWeek[] = {"___", "Sunday", "Monday", "Tuesday", "Wednesday",
 								"Thursday", "Friday", "Saturday"};
@@ -19,13 +13,23 @@ char *monthNames[] = {"___", "January", "February", "March", "April", "May",
 								"June", "July", "August", "September",
 								"October", "November", "December"};
 
+////////////////////
+// Setup function //
+////////////////////
+
 void setup() {
-	currentMenu = MAIN_MENU;
+	// Enable the serial port so the console works
 	
 	Serial.begin(9600);
 
+	// Setup the I2C bus so we can actually talk to the Chronodot
+
 	Wire.begin();
 }
+
+////////////////
+// Main loop //
+///////////////
 
 void loop() {
 	while (!Serial) {
@@ -85,6 +89,10 @@ void loop() {
 	}
 }
 
+///////////////////////////////////
+// Display the time for the user //
+///////////////////////////////////
+
 void showTime() {
 	Serial.println("");
 	
@@ -137,6 +145,10 @@ void showTime() {
 	Serial.println(myTime.getSeconds());
 }
 
+/////////////////////////////////////////////
+// Show the Chronodot's configuration data //
+/////////////////////////////////////////////
+
 void showStatus() {
 	Serial.println("");
 
@@ -184,9 +196,19 @@ void showStatus() {
 	Serial.print("Busy flag is ");
 	Serial.println(busy);
 	
-	bool alarm = Chronodot::getAlarmOneFired();
+	bool alarm = Chronodot::getAlarmOneEnabled();
+	
+	Serial.print("Alarm one enabled is ");
+	Serial.println(alarm);
+	
+	alarm = Chronodot::getAlarmOneFired();
 	
 	Serial.print("Alarm one fired is ");
+	Serial.println(alarm);
+	
+	alarm = Chronodot::getAlarmTwoEnabled();
+	
+	Serial.print("Alarm two enabled is ");
 	Serial.println(alarm);
 	
 	alarm = Chronodot::getAlarmTwoFired();
@@ -206,17 +228,103 @@ void showStatus() {
 	Serial.println(" C");
 }
 
+///////////////////////////////
+// Modifies the current time //
+///////////////////////////////
+
 void changeTime() {
 
 }
+
+//////////////////////////////////
+// Alarm one & two edit/display //
+//////////////////////////////////
 
 void alarmMenu() {
 
 }
 
-void alarmSettings() {
+//////////////////////////
+// Alarm based settings //
+//////////////////////////
 
+void alarmSettings() {
+	while (true) {
+		Serial.println("");
+		Serial.println("Alarm Settings");
+		Serial.println("---------");
+		Serial.println("1. Toggle alarm one enabled");
+		Serial.println("2. Toggle alarm two enabled");	
+		Serial.println("3. Reset alarm one flag");
+		Serial.println("4. Reset alarm two flag");
+		Serial.println("");
+		Serial.println("x. Back to main menu");
+		Serial.println("");
+	
+		lastInput = 0;
+	
+		while (lastInput == 0) {
+			Serial.print("? ");
+		
+			while (Serial.available() == 0) {
+				// Just wait
+			}
+		
+			lastInput = Serial.read();
+
+			Serial.println(lastInput);
+
+			while (Serial.available() > 0)	// Eat up any other input
+				Serial.read();
+			
+			Serial.println("");
+			
+			bool old;		// Not allowed in the switch with this compiler
+			
+			switch (lastInput) {
+				case '1':
+					old = Chronodot::getAlarmOneEnabled();
+					
+					Chronodot::enableAlarmOne(!old);
+					
+					Serial.print("Alarm one enabled is now ");
+					Serial.println(!old);
+					
+					break;
+				case '2':
+					old = Chronodot::getAlarmTwoEnabled();
+					
+					Chronodot::enableAlarmTwo(!old);
+					
+					Serial.print("Alarm two enabled is now ");
+					Serial.println(!old);
+					
+					break;
+				case '3':
+					Chronodot::resetAlarmOneFired();
+					
+					Serial.println("Alarm one flag reset");
+					
+					break;
+				case '4':
+					Chronodot::resetAlarmTwoFired();
+					
+					Serial.println("Alarm two flag reset");
+
+					break;
+				case 'x':
+				case 'X':
+					return;					// Back to the main menu
+				default:
+					lastInput = 0;			// Bad input, force the prompt to re-display
+			}
+		}
+	}
 }
+
+///////////////////////////
+// General settings menu //
+///////////////////////////
 
 void generalSettings() {
 	while (true) {
