@@ -454,7 +454,7 @@ uint8_t ChronoTime::getHours() {
 void ChronoTime::setHours(uint8_t hours) {
 	// Special handling to ensure the Chronodot knows we're in 24 hour mode
 	
-	this->data[MINUTE_POSITION] = 0x3f & TO_BCD_DIGITS(hours % 24);
+	this->data[HOUR_POSITION] = 0x3f & TO_BCD_DIGITS(hours % 24);
 }
 
 uint8_t ChronoTime::getDayOfWeek() {
@@ -470,7 +470,7 @@ uint8_t ChronoTime::getDayOfMonth() {
 }
 
 void ChronoTime::setDayOfMonth(uint8_t dayOfMonth) {
-	this->data[DAY_OF_MONTH_POSITION] = dayOfMonth % 31;
+	this->data[DAY_OF_MONTH_POSITION] = ((dayOfMonth - 1) % 31) + 1;
 }
 
 uint8_t ChronoTime::getMonth() {
@@ -483,17 +483,17 @@ uint8_t ChronoTime::getMonth() {
 void ChronoTime::setMonth(uint8_t month) {
 	// Special handling to keep the century bit
 	
-	this->data[MONTH_POSITION] = this->data[MONTH_POSITION] & 0x80 + TO_BCD_DIGITS(month % 31);
+	this->data[MONTH_POSITION] = (this->data[MONTH_POSITION] & 0x80) + TO_BCD_DIGITS(((month - 1) % 12) + 1);
 }
 
 uint8_t ChronoTime::getYear() {
 	// Special handling to get the century bit from the month position
 	
-	return this->data[MONTH_POSITION] & 0x80 ? 100 : 0
+	return (this->data[MONTH_POSITION] & 0x80 ? 100 : 0)
 			+ FROM_BCD_DIGITS(this->data[YEAR_POSITION]);
 }
 
 void ChronoTime::setYear(uint8_t year) {
-	this->data[MONTH_POSITION] = this->data[MONTH_POSITION] & 0x7F + (year >= 100 ? 0x80 : 0x00);
+	this->data[MONTH_POSITION] = (this->data[MONTH_POSITION] & 0x7F) + (year >= 100 ? 0x80 : 0x00);
 	this->data[YEAR_POSITION] = TO_BCD_DIGITS(year % 100);
 }
