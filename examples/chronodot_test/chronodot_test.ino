@@ -4,6 +4,7 @@
 
 ChronoTime myTime;		// The time variable we'll use
 char lastInput;			// The last byte we read from serial
+char buffer[100];		// For getting input
 
 // Human readable names for the times we'll be printing out
 
@@ -12,6 +13,10 @@ char *daysOfWeek[] = {"___", "Sunday", "Monday", "Tuesday", "Wednesday",
 char *monthNames[] = {"___", "January", "February", "March", "April", "May",
 								"June", "July", "August", "September",
 								"October", "November", "December"};
+
+#define GOT_STRING 1	// Useful for one of our functions
+#define EXIT_MENU 2
+#define TOO_LONG 3
 
 ////////////////////
 // Setup function //
@@ -231,8 +236,6 @@ void showStatus() {
 ///////////////////////////////
 
 void changeTime() {
-	char buffer[100];
-
 	Serial.println(F(""));
 	Serial.println(F("Please enter the time in the form:"));
 	Serial.println(F(""));
@@ -250,42 +253,12 @@ void changeTime() {
 	
 		// We're going to gather up characters until we get an 'x', 'd', or buffer is full
 		
-		uint8_t i = 0;
+		uint8_t result = getLineIntoBuffer();
 		
-		while (true) {
-			while (Serial.available() == 0) {
-				// Just wait
-			}
-			
-			buffer[i] = Serial.read();
-			
-			Serial.print(buffer[i]);
-			
-			if (buffer[i] == 8) {
-				// Delete character, move back one
-				
-				i = i - 2;
-			} else if (buffer[i] == 'd' || buffer[i] == 'D') {
-				buffer[i + 1] = 0;
-				
-				break;			// We got what we needed
-			} else if (buffer[i] == 'x' || buffer[i] == 'X') {
-				return;			// Back to the main menu
-			} else if (i >= 99) {
-				Serial.println(F(""));
-				Serial.println(F("Input too long."));
-				
-				i = 255;		// Signal that there was a problem
-				
-				break;
-			}
-			
-			i++;
-		}
-		
-		if (i == 255) {
-			continue;	// Try getting input again, they messed up
-		}
+		if (result == EXIT_MENU)
+			return;
+		else if (result == TOO_LONG)
+			continue;
 	
 		// We've got our string, we're going to try to parse it out
 		
@@ -301,16 +274,11 @@ void changeTime() {
 				Serial.println(F(""));
 				Serial.println(F("Didn't get enough numbers"));
 				
-				i = 255;
-				
-				break;
+				continue;	// They messed up, let them try again
 			}
 			
 			start = nextStart;
 		}
-		
-		if (i == 255)
-			continue;	// They messed up
 		
 		// OK, numbers contains all the fields. Do some quick validation
 		
@@ -367,6 +335,39 @@ void changeTime() {
 		showTime();
 		
 		return;
+	}
+}
+
+uint8_t getLineIntoBuffer() {
+	uint8_t i = 0;
+		
+	while (true) {
+		while (Serial.available() == 0) {
+			// Just wait
+		}
+		
+		buffer[i] = Serial.read();
+		
+		Serial.print(buffer[i]);
+		
+		if (buffer[i] == 8) {
+			// Delete character, move back one
+			
+			i = i - 2;
+		} else if (buffer[i] == 'd' || buffer[i] == 'D') {
+			buffer[i + 1] = 0;
+			
+			return GOT_STRING;	// Got what we need
+		} else if (buffer[i] == 'x' || buffer[i] == 'X') {
+			return EXIT_MENU;	// Back to the main menu
+		} else if (i >= 99) {
+			Serial.println(F(""));
+			Serial.println(F("Input too long."));
+			
+			return TOO_LONG;
+		}
+		
+		i++;
 	}
 }
 
