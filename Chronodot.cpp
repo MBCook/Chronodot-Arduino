@@ -431,6 +431,14 @@ void ChronoTime::writeAlarmTwoBytesToWire() {
 	Wire.endTransmission();
 }
 
+void ChronoTime::setAlarmMode(uint8_t mode) {
+	this->data[ALARM_POSITION] = mode;
+}
+
+uint8_t ChronoTime::getAlarmMode() {
+	return this->data[ALARM_POSITION];
+}
+
 uint8_t ChronoTime::getSeconds() {
 	return FROM_BCD_DIGITS(this->data[SECOND_POSITION]);
 }

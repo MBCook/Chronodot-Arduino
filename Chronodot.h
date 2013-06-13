@@ -67,6 +67,9 @@ public:
 	uint8_t getYear();
 	void setYear(uint8_t year);
   
+	uint8_t getAlarmMode();
+	void setAlarmMode(uint8_t mode);
+
 protected:
 
 	uint8_t data[8];
