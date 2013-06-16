@@ -346,16 +346,29 @@ void ChronoTime::readAlarmOneBytesFromWire() {
 	} else {
 		// It's day mode, we already know that, strip the bit
 		
-		this->data[DAY_OF_WEEK_POSITION] = this->data[DAY_OF_WEEK_POSITION] & MASK(DAY_DATE_BIT);
+		this->data[DAY_OF_WEEK_POSITION] &= MASK(DAY_DATE_BIT);
 	}
 	
 	// Now we'll synthesize the alarm type byte
 	
-	this->data[ALARM_POSITION] = ((this->data[SECOND_POSITION] & BIT(ALARM_CONFIG_BIT)) >> (8 - ALARM_BIT_ONE))
-									| ((this->data[MINUTE_POSITION] & BIT(ALARM_CONFIG_BIT)) >> (8 - ALARM_BIT_TWO))
-									| ((this->data[HOUR_POSITION] & BIT(ALARM_CONFIG_BIT)) >> (8 - ALARM_BIT_THREE))
-									| ((highestByte & BIT(ALARM_CONFIG_BIT)) >> (8 - ALARM_BIT_FOUR))
+	this->data[ALARM_POSITION] = ((this->data[SECOND_POSITION] & BIT(ALARM_CONFIG_BIT)) >> (7 - ALARM_BIT_ONE))
+									| ((this->data[MINUTE_POSITION] & BIT(ALARM_CONFIG_BIT)) >> (7 - ALARM_BIT_TWO))
+									| ((this->data[HOUR_POSITION] & BIT(ALARM_CONFIG_BIT)) >> (7 - ALARM_BIT_THREE))
+									| ((highestByte & BIT(ALARM_CONFIG_BIT)) >> (7 - ALARM_BIT_FOUR))
 									| (day ? BIT(ALARM_DAY_DATE) : 0x00);
+
+	if (this->data[ALARM_POSITION] & BIT(ALARM_BIT_FOUR)) {
+		// When config bit 4 is set, we ignore day/date
+		this->data[ALARM_POSITION] &= MASK(ALARM_DAY_DATE);
+	}
+									
+	// And remove any alarm config bits that were set
+	
+	this->data[0] &= MASK(ALARM_CONFIG_BIT);
+	this->data[1] &= MASK(ALARM_CONFIG_BIT);
+	this->data[2] &= MASK(ALARM_CONFIG_BIT);
+	this->data[3] &= MASK(ALARM_CONFIG_BIT);
+	this->data[4] &= MASK(ALARM_CONFIG_BIT);
 }
 
 void ChronoTime::readAlarmTwoBytesFromWire() {
@@ -365,7 +378,7 @@ void ChronoTime::readAlarmTwoBytesFromWire() {
 	
 	readData(REGISTER_ALARM_TWO, &this->data[MINUTE_POSITION], 3);
 	
-	uint8_t highestByte = this->data[DAY_OF_MONTH_POSITION];
+	uint8_t highestByte = this->data[DAY_OF_WEEK_POSITION];
 		
 	// Figure out if it's day or date
 	
@@ -379,15 +392,27 @@ void ChronoTime::readAlarmTwoBytesFromWire() {
 	} else {
 		// It's day mode, we already know that, strip the bit
 		
-		this->data[DAY_OF_WEEK_POSITION] = this->data[DAY_OF_WEEK_POSITION] & MASK(DAY_DATE_BIT);
+		this->data[DAY_OF_WEEK_POSITION] &= MASK(DAY_DATE_BIT);
 	}
 		
 	// Now we'll synthesize the alarm type byte
 	
-	this->data[ALARM_POSITION] = ((this->data[MINUTE_POSITION] & BIT(ALARM_CONFIG_BIT)) >> (8 - ALARM_BIT_TWO))
-									| ((this->data[HOUR_POSITION] & BIT(ALARM_CONFIG_BIT)) >> (8 - ALARM_BIT_THREE))
-									| ((highestByte & BIT(ALARM_CONFIG_BIT)) >> (8 - ALARM_BIT_FOUR))
+	this->data[ALARM_POSITION] = ((this->data[MINUTE_POSITION] & BIT(ALARM_CONFIG_BIT)) >> (7 - ALARM_BIT_TWO))
+									| ((this->data[HOUR_POSITION] & BIT(ALARM_CONFIG_BIT)) >> (7 - ALARM_BIT_THREE))
+									| ((highestByte & BIT(ALARM_CONFIG_BIT)) >> (7 - ALARM_BIT_FOUR))
 									| (day ? BIT(ALARM_DAY_DATE) : 0x00);
+
+	if (this->data[ALARM_POSITION] & BIT(ALARM_BIT_FOUR)) {
+		// When config bit 4 is set, we ignore day/date
+		this->data[ALARM_POSITION] &= MASK(ALARM_DAY_DATE);
+	}
+
+	// And remove any alarm config bits that were set
+	
+	this->data[1] &= MASK(ALARM_CONFIG_BIT);
+	this->data[2] &= MASK(ALARM_CONFIG_BIT);
+	this->data[3] &= MASK(ALARM_CONFIG_BIT);
+	this->data[4] &= MASK(ALARM_CONFIG_BIT);
 }
 
 void ChronoTime::writeTimeBytesToWire() {
@@ -405,16 +430,16 @@ void ChronoTime::writeAlarmOneBytesToWire() {
 
 	// First 3 bytes are normal, and we use the high bit to transfer part of the alarm type
 
-	Wire.write(this->data[SECOND_POSITION] | (alarmType & ALARM_BIT_ONE ? BIT(ALARM_CONFIG_BIT) : 0));
-	Wire.write(this->data[MINUTE_POSITION] | (alarmType & ALARM_BIT_TWO ? BIT(ALARM_CONFIG_BIT) : 0));
-	Wire.write(this->data[HOUR_POSITION] | (alarmType & ALARM_BIT_THREE ? BIT(ALARM_CONFIG_BIT) : 0));
+	Wire.write(this->data[SECOND_POSITION] | (alarmType & BIT(ALARM_BIT_ONE) ? BIT(ALARM_CONFIG_BIT) : 0));
+	Wire.write(this->data[MINUTE_POSITION] | (alarmType & BIT(ALARM_BIT_TWO) ? BIT(ALARM_CONFIG_BIT) : 0));
+	Wire.write(this->data[HOUR_POSITION] | (alarmType & BIT(ALARM_BIT_THREE) ? BIT(ALARM_CONFIG_BIT) : 0));
 	
 	// Now we need to send the right byte, either the day or the date
 	
 	if (alarmType & ALARM_DAY_DATE) {	
-		Wire.write(this->data[DAY_OF_WEEK_POSITION] | (alarmType & ALARM_BIT_FOUR ? BIT(ALARM_CONFIG_BIT) : 0) | BIT(DAY_DATE_BIT));
+		Wire.write(this->data[DAY_OF_WEEK_POSITION] | (alarmType & BIT(ALARM_BIT_FOUR) ? BIT(ALARM_CONFIG_BIT) : 0) | BIT(DAY_DATE_BIT));
 	} else {
-		Wire.write(this->data[DAY_OF_MONTH_POSITION] | (alarmType & ALARM_BIT_FOUR ? BIT(ALARM_CONFIG_BIT) : 0));
+		Wire.write(this->data[DAY_OF_MONTH_POSITION] | (alarmType & BIT(ALARM_BIT_FOUR) ? BIT(ALARM_CONFIG_BIT) : 0));
 	}
 		
 	Wire.endTransmission();
@@ -430,15 +455,15 @@ void ChronoTime::writeAlarmTwoBytesToWire() {
 
 	// First two bytes are normal, and we use the high bit to transfer part of the alarm type
 
-	Wire.write(this->data[MINUTE_POSITION] | (alarmType & ALARM_BIT_TWO ? BIT(ALARM_CONFIG_BIT) : 0));
-	Wire.write(this->data[HOUR_POSITION] | (alarmType & ALARM_BIT_THREE ? BIT(ALARM_CONFIG_BIT) : 0));
+	Wire.write(this->data[MINUTE_POSITION] | (alarmType & BIT(ALARM_BIT_TWO) ? BIT(ALARM_CONFIG_BIT) : 0));
+	Wire.write(this->data[HOUR_POSITION] | (alarmType & BIT(ALARM_BIT_THREE) ? BIT(ALARM_CONFIG_BIT) : 0));
 	
 	// Now we need to send the right byte, either the day or the date
 	
 	if (alarmType & ALARM_DAY_DATE) {	
-		Wire.write(this->data[DAY_OF_WEEK_POSITION] | (alarmType & ALARM_BIT_FOUR ? BIT(ALARM_CONFIG_BIT) : 0) | BIT(DAY_DATE_BIT));
+		Wire.write(this->data[DAY_OF_WEEK_POSITION] | (alarmType & BIT(ALARM_BIT_FOUR) ? BIT(ALARM_CONFIG_BIT) : 0) | BIT(DAY_DATE_BIT));
 	} else {
-		Wire.write(this->data[DAY_OF_MONTH_POSITION] | (alarmType & ALARM_BIT_FOUR ? BIT(ALARM_CONFIG_BIT) : 0));
+		Wire.write(this->data[DAY_OF_MONTH_POSITION] | (alarmType & BIT(ALARM_BIT_FOUR) ? BIT(ALARM_CONFIG_BIT) : 0));
 	}
 		
 	Wire.endTransmission();
