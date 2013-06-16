@@ -355,9 +355,9 @@ void ChronoTime::readAlarmOneBytesFromWire() {
 void ChronoTime::readAlarmTwoBytesFromWire() {
 	this->clearData();
 	
-	// Get the three bytes of alarm one's data
+	// Get the three bytes of alarm two's data
 	
-	readData(REGISTER_ALARM_ONE, this->data, 4);
+	readData(REGISTER_ALARM_TWO, this->data, 3);
 		
 	// Figure out if it's day or date
 	
@@ -413,7 +413,7 @@ void ChronoTime::writeAlarmTwoBytesToWire() {
 	uint8_t alarmType = this->data[ALARM_POSITION];
 	
 	Wire.beginTransmission(CHRONODOT_ADDRESS);
-	Wire.write(REGISTER_ALARM_ONE);
+	Wire.write(REGISTER_ALARM_TWO);
 
 	// First two bytes are normal, and we use the high bit to transfer part of the alarm type
 

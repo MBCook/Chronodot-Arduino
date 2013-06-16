@@ -5,6 +5,7 @@
 ChronoTime myTime;		// The time variable we'll use
 char lastInput;			// The last byte we read from serial
 char buffer[100];		// For getting input
+bool goodTime;			// Whether getTime succeded
 
 // Human readable names for the times we'll be printing out
 
@@ -73,7 +74,7 @@ void loop() {
 				
 			switch (lastInput) {
 				case '1':
-					showTime();
+					showTime(true);
 					break;
 				case '2':
 					showStatus();
@@ -98,10 +99,11 @@ void loop() {
 // Display the time for the user //
 ///////////////////////////////////
 
-void showTime() {
-	// Read in the current time
+void showTime(bool readTime) {
+	// Read in the current time if asked
 	
-	Chronodot::getTime(&myTime);	
+	if (readTime)
+		Chronodot::getTime(&myTime);	
 	
 	// Display it
 	
@@ -236,6 +238,23 @@ void showStatus() {
 ///////////////////////////////
 
 void changeTime() {
+	// Ask the user
+
+	getTime();
+
+	Chronodot::setTime(&myTime);
+
+	// Show them the result, go back to main menu
+
+	Serial.println(F(""));
+	Serial.print(F("Time is now: "));
+	
+	showTime(true);
+	
+	return;
+}
+
+void getTime() {
 	Serial.println(F(""));
 	Serial.println(F("Please enter the time in the form:"));
 	Serial.println(F(""));
@@ -245,7 +264,7 @@ void changeTime() {
 	Serial.println(F("use two digits for the year, and use 24h time."));
 	Serial.println(F("The 'd' is how we know you're done typing."));
 	Serial.println(F(""));
-	Serial.println(F("Enter 'x' to return to the main menu."));
+	Serial.println(F("Enter 'x' to return to the menu"));
 
 	while (true) {
 		Serial.println(F(""));
@@ -255,10 +274,13 @@ void changeTime() {
 		
 		uint8_t result = getLineIntoBuffer();
 		
-		if (result == EXIT_MENU)
+		if (result == EXIT_MENU) {
+			goodTime = false;
+			
 			return;
-		else if (result == TOO_LONG)
+		} else if (result == TOO_LONG) {
 			continue;
+		}
 	
 		// We've got our string, we're going to try to parse it out
 		
@@ -325,14 +347,7 @@ void changeTime() {
 		myTime.setMinutes(numbers[5]);
 		myTime.setSeconds(numbers[6]);
 		
-		Chronodot::setTime(&myTime);
-	
-		// Show them the result, go back to main menu
-	
-		Serial.println(F(""));
-		Serial.print(F("Time is now: "));
-		
-		showTime();
+		goodTime = true;
 		
 		return;
 	}
@@ -407,8 +422,188 @@ uint8_t getNextNumber(char *data, uint8_t start, uint8_t *nextStart) {
 // Alarm one & two edit/display //
 //////////////////////////////////
 
-void alarmMenu() {
+void displayAlarms() {
+	// Get the first time
+	
+	Chronodot::getAlarmOneTime(&myTime);
+	
+	// Print it
+	
+	Serial.print(F("Alarm one time: "));
+	
+	showTime(false);
+	
+	Serial.print(F("Alarm one mode: "));
+	
+	switch(myTime.getAlarmMode()) {
+		case ALARM_ONE_PER_SECOND:
+			Serial.println(F("Once per second"));
+			break;
+		case ALARM_ONE_MATCH_S:
+			Serial.println(F("Match seconds"));
+			break;
+		case ALARM_ONE_MATCH_M_S:
+			Serial.println(F("Match minutes & seconds"));
+			break;
+		case ALARM_ONE_MATCH_H_M_S:
+			Serial.println(F("Match hours, minutes, and seconds"));
+			break;
+		case ALARM_ONE_MATCH_DATE_H_M_S:
+			Serial.println(F("Match date, hours, minutes, and seconds"));
+			break;
+		case ALARM_ONE_MATCH_DAY_H_M_S:
+			Serial.println(F("Match day of week, hours, minutes, and seconds"));
+			break;
+		default:
+			Serial.println(F("unknown"));
+			break;
+	}
+	
+	// Get the second time
+	
+	Chronodot::getAlarmTwoTime(&myTime);
+	
+	// Print it
+	
+	Serial.print(F("Alarm two time: "));
+	
+	showTime(false);
+	
+	Serial.print(F("Alarm two mode: "));
+	
+	switch(myTime.getAlarmMode()) {
+		case ALARM_TWO_PER_MINUTE:
+			Serial.println(F("At the top of each minutes"));
+			break;
+		case ALARM_TWO_MATCH_M:
+			Serial.println(F("Match minutes"));
+			break;
+		case ALARM_TWO_MATCH_H_M:
+			Serial.println(F("Match hours and minutes"));
+			break;
+		case ALARM_TWO_MATCH_DATE_H_M:
+			Serial.println(F("Match date, hours, and minutes"));
+			break;
+		case ALARM_TWO_MATCH_DAY_H_M:
+			Serial.println(F("Match day of week, hours, and minutes"));
+			break;
+		default:
+			Serial.println(F("unknown"));
+			break;
+	}
+}
 
+void setAlarm() {
+	Serial.println(F(""));
+	Serial.println(F("First enter the time you want the alarm to go off."));
+	Serial.println(F("For any fields you won't use, just put in a valid value."));
+
+	getTime();
+
+	if (!goodTime)
+		return;			// They asked to go back to the menu
+
+	// OK, now we just need them to chose which alarm we're setting
+	
+	Serial.println(F(""));
+	Serial.println(F(""));
+	Serial.println(F("Which alarm and mode would you like?"));
+	Serial.println(F("---------"));
+	Serial.println(F("1. Alarm one - Once per second"));
+	Serial.println(F("2. Alarm one - When seconds match"));
+	Serial.println(F("3. Alarm one - When minutes & seconds match"));
+	Serial.println(F("4. Alarm one - When hours, minutes & seconds match"));
+	Serial.println(F("5. Alarm one - When date, hours, minutes & seconds match"));
+	Serial.println(F("6. Alarm one - When day of week, hours, minutes & seconds match"));
+	Serial.println(F("7. Alarm two - Top of every minute"));
+	Serial.println(F("8. Alarm two - When minutes match"));
+	Serial.println(F("9. Alarm two - When hours & minutes match"));
+	Serial.println(F("A. Alarm two - When date, hours & minutes match"));
+	Serial.println(F("B. Alarm one - When day of week, hours & minutes match"));
+	Serial.println(F(""));
+	Serial.println(F("x. Back to main menu"));
+	Serial.println(F(""));
+	
+	lastInput = 0;
+	uint8_t alarmMode;
+	bool alarmOne = true;
+
+	while (lastInput == 0) {
+		Serial.print(F("? "));
+	
+		while (Serial.available() == 0) {
+			// Just wait
+		}
+	
+		lastInput = Serial.read();
+
+		Serial.println(lastInput);
+
+		while (Serial.available() > 0)	// Eat up any other input
+			Serial.read();
+		
+		Serial.println(F(""));
+		
+		switch (lastInput) {
+			case '1':
+				alarmMode = ALARM_ONE_PER_SECOND;
+				break;
+			case '2':
+				alarmMode = ALARM_ONE_MATCH_S;
+				break;
+			case '3':
+				alarmMode = ALARM_ONE_MATCH_M_S;
+				break;
+			case '4':
+				alarmMode = ALARM_ONE_MATCH_H_M_S;
+				break;
+			case '5':
+				alarmMode = ALARM_ONE_MATCH_DATE_H_M_S;
+				break;
+			case '6':
+				alarmMode = ALARM_ONE_MATCH_DAY_H_M_S;
+				break;
+			case '7':
+				alarmOne = false;
+				alarmMode = ALARM_TWO_PER_MINUTE;
+				break;
+			case '8':
+				alarmOne = false;
+				alarmMode = ALARM_TWO_MATCH_M;
+				break;
+			case '9':
+				alarmOne = false;
+				alarmMode = ALARM_TWO_MATCH_H_M;
+				break;
+			case 'A':
+			case 'a':
+				alarmOne = false;
+				alarmMode = ALARM_TWO_MATCH_DATE_H_M;
+				break;
+			case 'B':
+			case 'b':
+				alarmOne = false;
+				alarmMode = ALARM_TWO_MATCH_DAY_H_M;
+				break;
+			case 'x':
+			case 'X':
+				return;					// Back to the main menu
+			default:
+				lastInput = 0;			// Bad input, force the prompt to re-display
+		}
+	}
+	
+	// OK, set the alarm from the time variable
+	
+	myTime.setAlarmMode(alarmMode);
+	
+	if (alarmOne) {
+		Chronodot::setAlarmOneTime(&myTime);
+	} else {
+		Chronodot::setAlarmTwoTime(&myTime);		
+	}
+
+	Serial.println(F("Alarm updated"));
 }
 
 //////////////////////////
@@ -420,10 +615,12 @@ void alarmSettings() {
 		Serial.println(F(""));
 		Serial.println(F("Alarm Settings"));
 		Serial.println(F("---------"));
-		Serial.println(F("1. Toggle alarm one enabled"));
-		Serial.println(F("2. Toggle alarm two enabled"));	
-		Serial.println(F("3. Reset alarm one flag"));
-		Serial.println(F("4. Reset alarm two flag"));
+		Serial.println(F("1. Change alarm time"));
+		Serial.println(F("2. Display alarm times"));		
+		Serial.println(F("3. Toggle alarm one enabled"));
+		Serial.println(F("4. Toggle alarm two enabled"));	
+		Serial.println(F("5. Reset alarm one flag"));
+		Serial.println(F("6. Reset alarm two flag"));
 		Serial.println(F(""));
 		Serial.println(F("x. Back to main menu"));
 		Serial.println(F(""));
@@ -450,6 +647,14 @@ void alarmSettings() {
 			
 			switch (lastInput) {
 				case '1':
+					setAlarm();
+					
+					break;
+				case '2':
+					displayAlarms();
+					
+					break;
+				case '3':
 					old = Chronodot::getAlarmOneEnabled();
 					
 					Chronodot::enableAlarmOne(!old);
@@ -458,7 +663,7 @@ void alarmSettings() {
 					Serial.println(!old);
 					
 					break;
-				case '2':
+				case '4':
 					old = Chronodot::getAlarmTwoEnabled();
 					
 					Chronodot::enableAlarmTwo(!old);
@@ -467,13 +672,13 @@ void alarmSettings() {
 					Serial.println(!old);
 					
 					break;
-				case '3':
+				case '5':
 					Chronodot::resetAlarmOneFired();
 					
 					Serial.println(F("Alarm one flag reset"));
 					
 					break;
-				case '4':
+				case '6':
 					Chronodot::resetAlarmTwoFired();
 					
 					Serial.println(F("Alarm two flag reset"));
